@@ -42,12 +42,17 @@ static int read_counter(const char *iface, const char *what, unsigned long long 
 	return 0;
 }
 
-static void setup_trigger(void)
+static void set_modes(void)
 {
-	write_value("trigger", "netdev");
 	write_value("link", "1");
 	write_value("tx", "1");
 	write_value("rx", "1");
+}
+
+static void setup_trigger(void)
+{
+	write_value("trigger", "netdev");
+	set_modes();
 }
 
 int main(void)
@@ -78,9 +83,12 @@ int main(void)
 
 		if (active >= 0 && active != current) {
 			write_value("device_name", ifaces[active]);
+			/* switching the device resets the mode flags */
+			set_modes();
 			current = active;
 		} else if (current < 0) {
 			write_value("device_name", ifaces[0]);
+			set_modes();
 			current = 0;
 		}
 
