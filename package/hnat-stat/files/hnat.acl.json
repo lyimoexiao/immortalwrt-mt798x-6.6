@@ -1,0 +1,9 @@
+{
+	"luci": {
+		"read": {
+			"ubus": {
+				"hnat": [ "rates" ]
+			}
+		}
+	}
+}
