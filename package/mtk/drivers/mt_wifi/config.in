@@ -779,6 +779,15 @@ config MTK_WIFI_FW_BIN_LOAD
        bool "load wifi fw with bin file"
        default n
 
+config MTK_EEPROM_FROM_MTD
+       depends on MTK_CHIP_MT7981 || MTK_CHIP_MT7986
+       bool "read calibration from the Factory MTD partition"
+       default n
+       help
+         Let the driver read calibration straight from the Factory partition
+         instead of loading an e2p image from /lib/firmware. The offset and
+         size come from l1profile.dat.
+
 config MTK_WIFI_SKU_TYPE
        depends on MTK_CHIP_MT7986
        string "Panther SKU Type : AX6000 or AX7800 or SADBDC"

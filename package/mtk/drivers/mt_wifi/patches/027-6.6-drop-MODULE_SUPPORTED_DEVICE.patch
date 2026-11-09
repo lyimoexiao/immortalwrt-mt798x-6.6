@@ -1,0 +1,19 @@
+--- a/mt_wifi/embedded/plug_in/whnat/woe_main.c	2026-11-09 03:45:23.432568422 +0000
++++ b/mt_wifi/embedded/plug_in/whnat/woe_main.c	2026-11-09 03:45:23.432568422 +0000
+@@ -901,5 +901,4 @@
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION(DRIVER_DESC);
+-MODULE_SUPPORTED_DEVICE("mt7615 within mt7622");
+ 
+
+--- a/mt_wifi/os/linux/wbsys_main_dev.c	2026-11-09 03:45:23.432568422 +0000
++++ b/mt_wifi/os/linux/wbsys_main_dev.c	2026-11-09 03:45:23.432568422 +0000
+@@ -310,7 +310,6 @@
+ module_exit(wbsys_module_exit);
+ 
+ MODULE_DESCRIPTION("Register for MTK WIFI driver HIF is internal bus");
+-MODULE_SUPPORTED_DEVICE("mtk wbsys platform driver");
+ #endif
+ 
+ #endif /* RTMP_RBUS_SUPPORT */

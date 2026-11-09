@@ -1,0 +1,13 @@
+--- a/mt_wifi/include/os/wbsys_res.h	2026-11-09 03:40:33.469627317 +0000
++++ b/mt_wifi/include/os/wbsys_res.h	2026-11-09 03:40:33.469627317 +0000
+@@ -23,6 +23,10 @@
+ 
+ #include "rtmp_chip.h"
+ 
++#ifndef OF_WBSYS_NAME
++#define OF_WBSYS_NAME "mediatek,wbsys"
++#endif
++
+ /*platform device & platform driver match name*/
+ static char wbsys_string[] = "wb_sys";
+ 
