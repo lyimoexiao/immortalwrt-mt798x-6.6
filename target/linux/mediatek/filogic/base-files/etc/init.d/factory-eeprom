@@ -2,16 +2,21 @@
 
 START=09
 
+# The MT7981/MT7986 vendor Wi-Fi driver reads calibration through an e2p
+# image instead of the Factory partition when it is built for OpenWrt.
+# Install the board's own calibration on first boot: every board keeps it
+# at the start of Factory, and l1profile.dat reads offset 0 with a size
+# large enough to cover the whole partition.
+
 FW_DIR=/lib/firmware
+E2P="$FW_DIR/e2p"
 MARKER=/etc/.factory-eeprom-done
-TARGETS="e2p MT7981_iPAiLNA_EEPROM.bin MT7981_ePAeLNA_EEPROM.bin"
-WIRELESS_DIR=/etc/wireless/mediatek
 
 find_factory_mtd() {
 	local dev name
 
 	[ -r /proc/mtd ] || return 1
-	while read -r dev _ _ _ name; do
+	while read -r dev _ _ name; do
 		case "$dev" in
 		mtd*:) ;;
 		*) continue ;;
@@ -23,59 +28,35 @@ find_factory_mtd() {
 	return 1
 }
 
-set_macaddress() {
-	local file="$1" wanted="$2" current
+factory_signature_ok() {
+	local mtd="$1"
 
-	[ -f "$file" ] || return 0
-	current="$(sed -n 's/^MacAddress=//p' "$file" | head -1)"
-	[ "$current" = "$wanted" ] && return 0
-	if [ -n "$current" ]; then
-		sed -i "s/^MacAddress=.*/MacAddress=$wanted/" "$file"
-	else
-		printf 'MacAddress=%s\n' "$wanted" >> "$file"
-	fi
-}
-
-apply_wireless_mac() {
-	local mac first rest la
-
-	. /lib/functions/system.sh
-	mac="$(mtd_get_mac_binary Factory 4)" || return 0
-	[ -n "$mac" ] || return 0
-
-	first="${mac%%:*}"
-	rest="${mac#*:}"
-	la="$(printf '%02x' $(( 0x$first | 0x02 )))"
-
-	# 2.4 GHz keeps the Factory wireless MAC, 5 GHz uses its LA-bit variant
-	set_macaddress "$WIRELESS_DIR/mt7981.dbdc.b0.dat" "$mac"
-	set_macaddress "$WIRELESS_DIR/mt7981.dbdc.b1.dat" "$la:$rest"
-}
-
-boot() {
-	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "netcore,n30-pro" ] || return 0
-
-	apply_wireless_mac
-	[ -f "$MARKER" ] && return 0
-
-	mtd="$(find_factory_mtd)" || return 0
-	[ -c "$mtd" ] || return 0
-
+	# MT7981/MT7986 EEPROM images start with 0x7981 / 0x7986 (little endian)
 	printf '\201\171' > /tmp/.factory-sig
 	dd if="$mtd" bs=2 count=1 of=/tmp/.factory-head 2>/dev/null
-	if ! cmp -s /tmp/.factory-sig /tmp/.factory-head; then
-		echo "factory-eeprom: unexpected signature in $mtd, keeping default calibration" >&2
+	if cmp -s /tmp/.factory-sig /tmp/.factory-head; then
 		rm -f /tmp/.factory-sig /tmp/.factory-head
 		return 0
 	fi
 	rm -f /tmp/.factory-sig /tmp/.factory-head
+	return 1
+}
+
+boot() {
+	[ -f "$MARKER" ] && return 0
+	[ -d /sys/module/mt_wifi ] || [ -e /lib/modules/$(uname -r)/mt_wifi.ko ] || return 0
+
+	mtd="$(find_factory_mtd)" || return 0
+	[ -c "$mtd" ] || return 0
+	factory_signature_ok "$mtd" || {
+		echo "factory-eeprom: no usable calibration in $mtd, keeping the default image" >&2
+		return 0
+	}
 
 	mkdir -p "$FW_DIR"
-	for f in $TARGETS; do
-		dd if="$mtd" of="$FW_DIR/$f" bs=128k 2>/dev/null || return 0
-	done
-
+	dd if="$mtd" of="$E2P" bs=128k 2>/dev/null || return 0
 	sync
+
 	touch "$MARKER"
-	echo "factory-eeprom: calibration copied from $mtd" >&2
+	echo "factory-eeprom: calibration installed from $mtd" >&2
 }
