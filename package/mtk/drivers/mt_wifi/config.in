@@ -155,6 +155,7 @@ config  MTK_RT_THIRD_CARD
 config  MTK_RT_FIRST_IF_RF_OFFSET
         hex
         depends on ! MTK_FIRST_IF_NONE
+        default 0x0 if TARGET_DEVICE_mediatek_filogic_DEVICE_netcore_n30-pro
         default 0xc0000
 
 config  MTK_RT_SECOND_IF_RF_OFFSET

@@ -1,0 +1,81 @@
+#!/bin/sh /etc/rc.common
+
+START=09
+
+FW_DIR=/lib/firmware
+MARKER=/etc/.factory-eeprom-done
+TARGETS="e2p MT7981_iPAiLNA_EEPROM.bin MT7981_ePAeLNA_EEPROM.bin"
+WIRELESS_DIR=/etc/wireless/mediatek
+
+find_factory_mtd() {
+	local dev name
+
+	[ -r /proc/mtd ] || return 1
+	while read -r dev _ _ _ name; do
+		case "$dev" in
+		mtd*:) ;;
+		*) continue ;;
+		esac
+		[ "$name" = '"Factory"' ] || continue
+		echo "/dev/${dev%:}"
+		return 0
+	done < /proc/mtd
+	return 1
+}
+
+set_macaddress() {
+	local file="$1" wanted="$2" current
+
+	[ -f "$file" ] || return 0
+	current="$(sed -n 's/^MacAddress=//p' "$file" | head -1)"
+	[ "$current" = "$wanted" ] && return 0
+	if [ -n "$current" ]; then
+		sed -i "s/^MacAddress=.*/MacAddress=$wanted/" "$file"
+	else
+		printf 'MacAddress=%s\n' "$wanted" >> "$file"
+	fi
+}
+
+apply_wireless_mac() {
+	local mac first rest la
+
+	. /lib/functions/system.sh
+	mac="$(mtd_get_mac_binary Factory 4)" || return 0
+	[ -n "$mac" ] || return 0
+
+	first="${mac%%:*}"
+	rest="${mac#*:}"
+	la="$(printf '%02x' $(( 0x$first | 0x02 )))"
+
+	# 2.4 GHz keeps the Factory wireless MAC, 5 GHz uses its LA-bit variant
+	set_macaddress "$WIRELESS_DIR/mt7981.dbdc.b0.dat" "$mac"
+	set_macaddress "$WIRELESS_DIR/mt7981.dbdc.b1.dat" "$la:$rest"
+}
+
+boot() {
+	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "netcore,n30-pro" ] || return 0
+
+	apply_wireless_mac
+	[ -f "$MARKER" ] && return 0
+
+	mtd="$(find_factory_mtd)" || return 0
+	[ -c "$mtd" ] || return 0
+
+	printf '\201\171' > /tmp/.factory-sig
+	dd if="$mtd" bs=2 count=1 of=/tmp/.factory-head 2>/dev/null
+	if ! cmp -s /tmp/.factory-sig /tmp/.factory-head; then
+		echo "factory-eeprom: unexpected signature in $mtd, keeping default calibration" >&2
+		rm -f /tmp/.factory-sig /tmp/.factory-head
+		return 0
+	fi
+	rm -f /tmp/.factory-sig /tmp/.factory-head
+
+	mkdir -p "$FW_DIR"
+	for f in $TARGETS; do
+		dd if="$mtd" of="$FW_DIR/$f" bs=128k 2>/dev/null || return 0
+	done
+
+	sync
+	touch "$MARKER"
+	echo "factory-eeprom: calibration copied from $mtd" >&2
+}

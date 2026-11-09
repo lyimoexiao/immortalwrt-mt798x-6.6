@@ -1705,7 +1705,7 @@ define Device/netcore_n30-pro
   UBOOTENV_IN_UBI := 1
   IMAGE_SIZE := 117248k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-ledtrig-usbport automount
+  DEVICE_PACKAGES := kmod-mt_wifi kmod-warp kmod-mediatek_hnat mtwifi-cfg wifi-dats wifi-led hnat-stat kmod-usb3 kmod-usb-ledtrig-usbport automount
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += netcore_n30-pro

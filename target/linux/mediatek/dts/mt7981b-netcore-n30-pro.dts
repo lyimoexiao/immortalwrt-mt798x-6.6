@@ -48,7 +48,7 @@
 		internet {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WAN_ONLINE;
-			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_mesh: mesh {
@@ -57,24 +57,16 @@
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi2g {
+		wifi {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WLAN_2GHZ;
+			function = LED_FUNCTION_WLAN;
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
-		wifi5g {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WLAN_5GHZ;
-			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
 		};
 
 		wan {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WAN;
-			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
@@ -285,7 +277,7 @@
 };
 
 &wifi {
-	status = "okay";
+	status = "disabled";
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 };
