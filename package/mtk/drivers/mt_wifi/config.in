@@ -788,6 +788,14 @@ config MTK_EEPROM_FROM_MTD
          instead of loading an e2p image from /lib/firmware. The offset and
          size come from l1profile.dat.
 
+         BROKEN: on 6.6 the module builds, but insmod hangs in the platform
+         driver init path and never returns; the kernel keeps scheduling
+         user space (a scheduled reboot still fires), so it is the driver,
+         not a power problem. The vendor firmware does not use this path
+         either: it reads an e2p image from /lib/firmware and patches it
+         from Factory with iwpriv/ated. Keep this disabled; the e2p image
+         route (see /etc/init.d/factory-eeprom) is the working one.
+
 config MTK_WIFI_SKU_TYPE
        depends on MTK_CHIP_MT7986
        string "Panther SKU Type : AX6000 or AX7800 or SADBDC"

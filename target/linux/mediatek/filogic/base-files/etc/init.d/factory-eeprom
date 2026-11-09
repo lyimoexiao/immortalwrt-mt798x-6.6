@@ -3,10 +3,17 @@
 START=09
 
 # The MT7981/MT7986 vendor Wi-Fi driver reads calibration through an e2p
-# image instead of the Factory partition when it is built for OpenWrt.
-# Install the board's own calibration on first boot: every board keeps it
-# at the start of Factory, and l1profile.dat reads offset 0 with a size
-# large enough to cover the whole partition.
+# image in /lib/firmware, not from the Factory partition. The vendor
+# firmware ships a generic e2p image, reads a few "calibration block
+# address" fields from Factory (0x54B-0x563, 0x9A8 on MT7981) and patches
+# the image with iwpriv, then writes it back with ated. Copying the whole
+# Factory partition instead keeps every internal address consistent with
+# the original layout, so no patching step is needed.
+#
+# The driver only reads the image when the module loads, which happens
+# before this script runs, so the calibration takes effect on the next
+# boot. l1profile.dat reads offset 0 with a size that covers the whole
+# partition.
 
 FW_DIR=/lib/firmware
 E2P="$FW_DIR/e2p"
